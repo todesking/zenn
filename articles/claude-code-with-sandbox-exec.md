@@ -6,6 +6,10 @@ topics: ["mac", "claudecode"]
 published: true
 ---
 
+:::details 更新履歴
+2025-07-06 設定ファイルと起動オプションに不備があったので修正しました。今度こそ大丈夫です！！！！！
+:::
+
 Claude Codeくんは便利ですが、ちょっとドジなところもあるので目を離すのはちょっとこわいですね。
 
 https://x.com/mugisus/status/1940127947962396815
@@ -96,8 +100,6 @@ $ sandbox-exec -f ~/tmp/permissive-open.sb -D TARGET_DIR="$(pwd)" -D HOME_DIR="$
 ⏺ The sandbox mechanism is working correctly. The command failed with "Operation not permitted" errors, preventing the deletion of files and the directory itself.
 ```
 
-よさそうですね。上のルールは最低限のものなので、意図せず書き込みエラーが出た場合はご利用のツールに合わせて適宜追加してください。
-
-Claude Codeを`--debug`オプション付きで起動することで、
+よさそうですね。上のルールは最低限のものなので、意図せず書き込みエラーが出た場合はご利用のツールに合わせて適宜追加してください。トラブルシュート時はClaude Codeを`--debug`オプション付きで起動すると便利です。
 
 `sandbox-exec` はファイルだけでなくネットワーク等も制限できるので、設定次第でより安全になります。[前掲記事](https://blog.syum.ai/entry/2025/04/27/232946)や[Gemini CLIのrestrictive-proxiedルール](https://github.com/google-gemini/gemini-cli/blob/ef736f0d1c2f629d5de69d3131eda35cb4f757d7/packages/cli/src/utils/sandbox-macos-restrictive-proxied.sb)などが参考になるでしょう。
