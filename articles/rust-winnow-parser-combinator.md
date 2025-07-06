@@ -19,32 +19,141 @@ Rustの他のパーサコンビネータと同じく、文字列やバイナリ�
 
 ### `trait Parser<I, O, E>`
 
-パーサを表現するtrait。だいたい `FnMut(&mut I) -> Result<O, E>` 相当。
+パーサを表現する中心的なtrait。概念的には `FnMut(&mut I) -> Result<O, E>` に相当し、入力`&mut I`から値`O`をパースするか、エラー`E`を返す。
 
-コンビネータで組み合わせることができる。例: `(p1, p2)` から「`p1`でパースしてから`p2`でパースし、結果をタプルで返す」パーサを作れる。
+```rust
+pub trait Parser<I, O, E> {
+    fn parse_next(&mut self, input: &mut I) -> PResult<O, E>;
+    
+    // 多数のコンビネータメソッドが提供される
+    fn by_ref(&mut self) -> ByRef<'_, Self> { ... }
+    fn map<G, O2>(self, g: G) -> Map<Self, G> { ... }
+    fn and_then<G, O2>(self, g: G) -> AndThen<Self, G> { ... }
+    // ... など
+}
+```
+
+このtraitの実装により、パーサ同士を組み合わせて複雑なパーサを構築できる：
+
+```rust
+// タプルでの連結
+(parser1, parser2)  // parser1の後にparser2を実行
+
+// 配列での繰り返し
+[parser; 3]  // parserを3回実行
+
+// Optionでの省略可能
+Some(parser)  // 0回または1回実行
+```
 
 ### `trait Stream`
 
 ```rust
-trait Stream {
+pub trait Stream: Offset + Clone + Debug {
     type Token: Debug;
     type Slice: Debug;
     type IterOffsets: Iterator<Item = (usize, Self::Token)>;
     type Checkpoint: Offset + Clone + Debug;
+    
+    // 基本操作
+    fn iter_offsets(&self) -> Self::IterOffsets;
+    fn eof_offset(&self) -> usize;
+    fn next_token(&mut self) -> Option<Self::Token>;
+    fn peek_token(&self) -> Option<(Self, Self::Token)>;
+    
+    // チェックポイント機能
+    fn checkpoint(&self) -> Self::Checkpoint;
+    fn reset(&mut self, checkpoint: &Self::Checkpoint);
+    
+    // スライス操作
+    fn peek_slice(&self, offset: usize) -> (Self, Self::Slice);
+    fn take(&mut self, offset: usize) -> Self::Slice;
 }
 ```
 
-`Token`の列を表現するtrait。Winnowは任意のトークン列を入力できるよう設計されており、`&str`(`char`の列)や`&[u8]`(`u8`の列)、あるいはトーカナイズした結果などをパース対象にできる。
+`Stream`は入力データの抽象化を提供する。標準的な実装：
+- `&str` - 文字列のパース
+- `&[u8]` - バイナリデータのパース
+- `&[T]` - 任意の型のスライス
+- `LocatingSlice<I>` - 位置情報付きストリーム
+- `Partial<I>` - 不完全な入力の処理
+- `Stateful<I, S>` - 状態付きストリーム
 
-パース時には内部的なイテレータを進めるが、`fn checkpoint(&self) -> Checkpoint`および`fn reset(&mut self, cp: &Checkpoint)`を使用して以前の位置に戻ることもできる。
+### `trait ParserError<I>`
 
-ストリームの能力に応じて、位置を扱うための`Location`や、トークン列を`T`型の値とマッチさせる `Compare<T>`トレイトなどが追加で実装される。
+```rust
+pub trait ParserError<I>: Debug + Display {
+    fn from_error_kind(input: &I, kind: ErrorKind) -> Self;
+    fn append(self, input: &I, kind: ErrorKind) -> Self;
+    
+    // オプショナルなメソッド
+    fn from_char(input: &I, char: char) -> Self { ... }
+    fn from_external_error(input: &I, kind: ErrorKind, e: Box<dyn Error>) -> Self { ... }
+}
+```
 
-### `trait ParserError`
+エラー処理の柔軟性を提供する。主な実装：
+- `()` - 最小限のエラー情報（高速）
+- `ErrorKind` - 基本的なエラー種別
+- `ContextError` - コンテキスト情報付きエラー
+- `VerboseError` - デバッグ用の詳細エラー
 
-エラーを扱うtrait。
+### `enum ErrMode<E>`
 
-バックトラックを扱うためには、追加で`trait ModalError`が必要。
+```rust
+pub enum ErrMode<E> {
+    Incomplete(Needed),     // 入力が不足
+    Backtrack(E),          // バックトラック可能なエラー
+    Cut(E),                // バックトラック不可能なエラー
+}
+```
+
+パーサの失敗モードを表現する。`Cut`を使うことで、無駄なバックトラックを防ぎ、より良いエラーメッセージを生成できる。
+
+### `struct PResult<O, E = ErrorKind>`
+
+```rust
+pub type PResult<O, E = ErrorKind> = Result<O, ErrMode<E>>;
+```
+
+パーサの結果型。通常の`Result`に`ErrMode`でラップされたエラーを含む。
+
+### ストリームラッパー型
+
+#### `LocatingSlice<I>`
+位置情報（行番号、列番号、バイトオフセット）を追跡する：
+
+```rust
+let input = LocatingSlice::new("hello\nworld");
+// パース中に location() メソッドで現在位置を取得可能
+```
+
+#### `Partial<I>`
+ストリーミングパースをサポート：
+
+```rust
+let mut input = Partial::new("incomplete dat");
+// パーサは Incomplete エラーを返すことができる
+```
+
+#### `Stateful<I, S>`
+パース中の状態管理：
+
+```rust
+let mut input = Stateful {
+    input: "data",
+    state: MyState::new(),
+};
+// パーサは input.state にアクセス可能
+```
+
+### 便利な型エイリアス
+
+```rust
+// よく使う組み合わせ
+pub type IResult<I, O, E = ErrorKind> = Result<(I, O), ErrMode<E>>;
+pub type ModalResult<O, E = ErrorKind> = Result<O, ErrMode<E>>;
+```
 
 ## 基本的な使い方
 
