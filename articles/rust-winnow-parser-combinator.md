@@ -13,7 +13,7 @@ RustのパーサコンビネータWinnowの基本的な使い方について紹�
 Rustの他のパーサコンビネータと同じく、文字列やバイナリなど任意のトークン列をパース可能な設計になっている。
 エラーはカスタマイズ可能で、速度を重視して最低限の情報だけ返すこともできるし、詳細な情報を返すこともできるようになっている。
 
-その柔軟性の代償として、多くののtraitとstructが組み合わさった一見複雑な設計になっているのは仕方がない(nomやcombineも似たようなものです)
+その柔軟性の代償として、多くのtraitとstructが組み合わさった一見複雑な設計になっているのは仕方がない(nomやcombineも似たようなものである)
 
 ## 主要な型
 
@@ -107,7 +107,7 @@ fn main() {
 
 ### 位置を扱いたい
 
-入力が`impl Location`である必要がある。典型的には、入力を`struct LocatintSlice`でラップする。
+入力が`impl Location`である必要がある。典型的には、入力を`struct LocatingSlice`でラップする。
 
 ```rust
 use winnow::prelude::*;
@@ -265,6 +265,8 @@ fn number_list(input: &mut &str) -> PResult<Vec<i32>> {
 }
 
 // 固定回数の繰り返し
+use winnow::ascii::dec_uint;
+
 fn rgb_values(input: &mut &str) -> PResult<[u8; 3]> {
     repeat(3, preceded(space0, dec_uint::<_, u8, _>)).parse_next(input)
 }
@@ -274,8 +276,9 @@ fn rgb_values(input: &mut &str) -> PResult<[u8; 3]> {
 
 ```rust
 use winnow::prelude::*;
-use winnow::token::take_while;
-use winnow::combinator::alt;
+use winnow::token::{take_while, take_till, any};
+use winnow::combinator::{alt, delimited, fold_repeat};
+use winnow::ascii::alpha1;
 
 // 識別子のパーサ
 fn identifier(input: &mut &str) -> PResult<&str> {
@@ -357,7 +360,7 @@ fn custom_error_parser(input: &mut &str) -> PResult<u8, MyError> {
 ```rust
 use winnow::prelude::*;
 use winnow::ascii::{dec_int, space0};
-use winnow::combinator::{alt, delimited, preceded};
+use winnow::combinator::{alt, delimited, preceded, fold_repeat};
 
 #[derive(Debug, Clone, PartialEq)]
 enum Expr {
@@ -382,7 +385,7 @@ fn factor(input: &mut &str) -> PResult<Expr> {
 fn term(input: &mut &str) -> PResult<Expr> {
     let init = factor.parse_next(input)?;
     
-    fold_repeat(
+    winnow::combinator::fold_repeat(
         0..,
         preceded((space0, '*', space0), factor),
         move || init.clone(),
@@ -394,7 +397,7 @@ fn term(input: &mut &str) -> PResult<Expr> {
 fn expr(input: &mut &str) -> PResult<Expr> {
     let init = term.parse_next(input)?;
     
-    fold_repeat(
+    winnow::combinator::fold_repeat(
         0..,
         preceded((space0, '+', space0), term),
         move || init.clone(),
@@ -412,4 +415,4 @@ fn main() {
 
 ## まとめ
 
-Winnowは型安全で柔軟なパーサコンビネータライブラリです。基本的なパーサから始めて、コンビネータを組み合わせることで複雑な構文解析も実装できます。ストリーミング、位置情報、状態管理など高度な機能も提供されており、様々なユースケースに対応できます。
+Winnowは型安全で柔軟なパーサコンビネータライブラリである。基本的なパーサから始めて、コンビネータを組み合わせることで複雑な構文解析も実装できる。ストリーミング、位置情報、状態管理など高度な機能も提供されており、様々なユースケースに対応できる。
