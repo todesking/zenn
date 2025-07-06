@@ -57,3 +57,7 @@ published: true # or false for drafts
 - File writes may be restricted to the project directory only
 - No testing framework is configured - focus on content creation
 - The repository is connected to GitHub for automatic publishing to Zenn
+
+## Writing Style Guidelines
+
+- 文体は「だ、である」調にする
