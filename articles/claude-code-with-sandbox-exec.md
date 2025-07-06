@@ -22,7 +22,7 @@ https://blog.syum.ai/entry/2025/04/27/232946
 
 [Gemini CLIの設定](https://github.com/google-gemini/gemini-cli/blob/ef736f0d1c2f629d5de69d3131eda35cb4f757d7/packages/cli/src/utils/sandbox-macos-permissive-open.sb)を参考にしつつルールを設定します:
 
-```:sandbox-macos-permissive-open.sb
+```:permissive-open.sb
 (version 1)
 
 (allow default)
@@ -38,6 +38,8 @@ https://blog.syum.ai/entry/2025/04/27/232946
     ;; Claude Code関係
     (subpath (string-append (param "HOME_DIR") "/.claude"))
     (literal (string-append (param "HOME_DIR") "/.claude.json"))
+    (literal (string-append (param "HOME_DIR") "/.claude.json.lock"))
+    (literal (string-append (param "HOME_DIR") "/.claude.json.backup"))
 
     ;; 一時ファイル関連
     (subpath "/tmp")
@@ -47,7 +49,7 @@ https://blog.syum.ai/entry/2025/04/27/232946
     ;; その他のツール関連。ご利用のツールに合わせて調整してください
     (subpath (string-append (param "HOME_DIR") "/.npm"))
 
-    ;; STDINとか
+    ;; STDOUTとか
     (literal "/dev/stdout")
     (literal "/dev/stderr")
     (literal "/dev/null")
@@ -57,7 +59,7 @@ https://blog.syum.ai/entry/2025/04/27/232946
 というファイルを用意して、
 
 ```shellsession
-$ sandbox-exec -f ~/tmp/permissive-open.sb -D TARGET_DIR=. -D HOME_DIR=~ ~/.claude/local/claude
+$ sandbox-exec -f ~/tmp/permissive-open.sb -D TARGET_DIR="$(pwd)" -D HOME_DIR="$HOME" ~/.claude/local/claude
 ╭───────────────────────────────────────────────────╮
 │ ✻ Welcome to Claude Code!                         │
 │                                                   │
@@ -95,5 +97,7 @@ $ sandbox-exec -f ~/tmp/permissive-open.sb -D TARGET_DIR=. -D HOME_DIR=~ ~/.clau
 ```
 
 よさそうですね。上のルールは最低限のものなので、意図せず書き込みエラーが出た場合はご利用のツールに合わせて適宜追加してください。
+
+Claude Codeを`--debug`オプション付きで起動することで、
 
 `sandbox-exec` はファイルだけでなくネットワーク等も制限できるので、設定次第でより安全になります。[前掲記事](https://blog.syum.ai/entry/2025/04/27/232946)や[Gemini CLIのrestrictive-proxiedルール](https://github.com/google-gemini/gemini-cli/blob/ef736f0d1c2f629d5de69d3131eda35cb4f757d7/packages/cli/src/utils/sandbox-macos-restrictive-proxied.sb)などが参考になるでしょう。
