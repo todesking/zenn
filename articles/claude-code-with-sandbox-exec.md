@@ -7,7 +7,8 @@ published: true
 ---
 
 :::details 更新履歴
-2025-07-06 設定ファイルと起動オプションに不備があったので修正しました。今度こそ大丈夫です！！！！！
+* **2025-07-06** 設定ファイルと起動オプションに不備があったので修正しました。今度こそ大丈夫です！！！！！
+* **2025-07-09** 設定ファイルに不備があり、セッションの更新がされずAPIエラーになる事象を修正しました。本当に今度こそ大丈夫だと思います！！！！！！！
 :::
 
 Claude Codeくんは便利ですが、ちょっとドジなところもあるので目を離すのはちょっとこわいですね。
@@ -44,6 +45,8 @@ https://blog.syum.ai/entry/2025/04/27/232946
     (literal (string-append (param "HOME_DIR") "/.claude.json"))
     (literal (string-append (param "HOME_DIR") "/.claude.json.lock"))
     (literal (string-append (param "HOME_DIR") "/.claude.json.backup"))
+    ;; セッション情報をKeychain経由で記録するらしい
+    (subpath (string-append (param "HOME_DIR") "/Library/Keychains"))
 
     ;; 一時ファイル関連
     (subpath "/tmp")
@@ -57,6 +60,10 @@ https://blog.syum.ai/entry/2025/04/27/232946
     (literal "/dev/stdout")
     (literal "/dev/stderr")
     (literal "/dev/null")
+    (literal "/dev/dtracehelper")
+    ;; /dev/ttys000 のようなパターンも許可したいためこのように書いています
+    ;; regexとglobを混同しているように見えますが、なんか本当にこう書く必要があるらしく……
+    (regex #"^/dev/tty*")
 )
 ```
 
@@ -100,6 +107,10 @@ $ sandbox-exec -f ~/tmp/permissive-open.sb -D TARGET_DIR="$(pwd)" -D HOME_DIR="$
 ⏺ The sandbox mechanism is working correctly. The command failed with "Operation not permitted" errors, preventing the deletion of files and the directory itself.
 ```
 
-よさそうですね。上のルールは最低限のものなので、意図せず書き込みエラーが出た場合はご利用のツールに合わせて適宜追加してください。トラブルシュート時はClaude Codeを`--debug`オプション付きで起動すると便利です。
+よさそうですね。上のルールは最低限のものなので、意図せず書き込みエラーが出た場合はご利用のツールに合わせて適宜追加してください。トラブルシュート時はClaude Codeを`--debug`オプション付きで起動すると便利です。それでも拾えないエラーは、Macのシステムログを監視するといいでしょう:
+
+```shellsession
+$ sudo log stream --predicate 'sender == "Sandbox"' | grep deny
+```
 
 `sandbox-exec` はファイルだけでなくネットワーク等も制限できるので、設定次第でより安全になります。[前掲記事](https://blog.syum.ai/entry/2025/04/27/232946)や[Gemini CLIのrestrictive-proxiedルール](https://github.com/google-gemini/gemini-cli/blob/ef736f0d1c2f629d5de69d3131eda35cb4f757d7/packages/cli/src/utils/sandbox-macos-restrictive-proxied.sb)などが参考になるでしょう。
