@@ -108,3 +108,5 @@ echo "Cache Read: $(format_scientific $CACHE_READ)"
 echo "---"
 echo "Refresh | refresh=true"
 ```
+
+おしまい。
