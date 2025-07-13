@@ -8,7 +8,7 @@ published: true
 
 RaycastかXbarというアプリを使うといいでしょう。
 
-## Raycast
+## [Raycast](https://www.raycast.com)
 
 ランチャー+ファイラー+その他色々、プラグインで何でもできる便利アプリ。[公式ストア](https://www.raycast.com/nyatinte/ccusage)にプラグインが公開されてるので入れれば動く。動かない場合は設定画面でnpxの場所を指定するとよい
 
