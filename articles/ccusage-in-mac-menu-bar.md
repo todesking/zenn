@@ -22,8 +22,8 @@ RaycastかXbarというアプリを使うといいでしょう。
 
 ```
 `xbar/ccusage.1m.sh` として、ccusageコマンドの出力を表示するxbarプラグインを作りなさい。
-  xbarプラグインの仕様については https://raw.githubusercontent.com/matryer/xbar-plugins/refs/heads/main/CONTRIBUTING.md を参照せよ。
-  `npx ccusage daily --json` で取得できる本日のデータから、Input/Output tokensとCostを表示せよ。
+xbarプラグインの仕様については https://raw.githubusercontent.com/matryer/xbar-plugins/refs/heads/main/CONTRIBUTING.md を参照せよ。
+`npx ccusage daily --json` で取得できる本日のデータから、Input/Output tokensとCostを表示せよ。
 ```
 
 このようなものができる。
@@ -33,6 +33,8 @@ RaycastかXbarというアプリを使うといいでしょう。
 
 ```bash:~/Library/Application\ Support/xbar/plugins/ccusage.1m.sh
 #!/usr/bin/env bash
+
+# LICENSE: CC0
 
 #  <xbar.title>ccusage</xbar.title>
 #  <xbar.version>v1.0</xbar.version>
