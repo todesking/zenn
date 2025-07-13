@@ -1,6 +1,6 @@
 ---
 title: "ccusageの出力をMacのメニューバーに表示する"
-emoji: "🎉"
+emoji: "📊"
 type: "tech" # tech: 技術記事 / idea: アイデア
 topics: ["mac", "raycast", "xbar", "claudecode"]
 published: true
